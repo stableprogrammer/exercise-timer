@@ -1,25 +1,71 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
+import { Play, Pause, RotateCcw, SlidersHorizontal, Dumbbell } from 'lucide-react'
 import './App.css'
 
-function FlipDigit({ value, animKey }: { value: string; animKey: number }) {
+function FlipDigit({ value }: { value: string }) {
+  const [anim, setAnim] = useState(false)
+  const prevRef = useRef(value)
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    if (prevRef.current === value) return
+    prevRef.current = value
+    setAnim(false)
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        setAnim(true)
+        timerRef.current = setTimeout(() => setAnim(false), 600)
+      })
+    })
+    return () => { if (timerRef.current) clearTimeout(timerRef.current) }
+  }, [value])
+
   return (
     <div className="digit">
-      <div className="digit-top" key={`top-${animKey}`}>
+      <div className={`digit-top${anim ? ' flip' : ''}`}>
         <span>{value}</span>
       </div>
-      <div className="digit-bottom" key={`bot-${animKey}`}>
+      <div className={`digit-bottom${anim ? ' flip' : ''}`}>
         <span>{value}</span>
       </div>
-      <div className="digit-divider" />
+      <div className="digit-line" />
     </div>
   )
 }
 
-function FlipPair({ twoDigit, animKey }: { twoDigit: string; animKey: number }) {
+function DigitPair({ val }: { val: string }) {
   return (
-    <div className="segment-group">
-      <FlipDigit value={twoDigit[0]} animKey={animKey * 10 + parseInt(twoDigit[0])} />
-      <FlipDigit value={twoDigit[1]} animKey={animKey * 10 + parseInt(twoDigit[1])} />
+    <div className="pair">
+      <FlipDigit value={val[0]} />
+      <FlipDigit value={val[1]} />
+    </div>
+  )
+}
+
+function SettingsOverlay({
+  setMin, setSec, onSetMin, onSetSec, onClose,
+}: {
+  setMin: number; setSec: number
+  onSetMin: (v: number) => void; onSetSec: (v: number) => void
+  onClose: () => void
+}) {
+  return (
+    <div className="overlay" onClick={onClose}>
+      <div className="settings-panel" onClick={e => e.stopPropagation()}>
+        <p className="settings-title">Set Duration</p>
+        <div className="settings-row">
+          <label>
+            <span>Min</span>
+            <input type="number" min={0} max={99} value={setMin}
+              onChange={e => onSetMin(Math.max(0, Math.min(99, +e.target.value)))} />
+          </label>
+          <label>
+            <span>Sec</span>
+            <input type="number" min={0} max={59} value={setSec}
+              onChange={e => onSetSec(Math.max(0, Math.min(59, +e.target.value)))} />
+          </label>
+        </div>
+      </div>
     </div>
   )
 }
@@ -30,7 +76,7 @@ export default function App() {
   const [done, setDone] = useState(false)
   const [setMin, setSetMin] = useState(10)
   const [setSec, setSetSec] = useState(0)
-  const [animKey, setAnimKey] = useState(0)
+  const [showSettings, setShowSettings] = useState(false)
 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const secsRef = useRef(totalSecs)
@@ -46,13 +92,11 @@ export default function App() {
     const next = secsRef.current - 1
     if (next <= 0) {
       setTotalSecs(0)
-      setAnimKey(k => k + 1)
       stop()
       setDone(true)
       return
     }
     setTotalSecs(next)
-    setAnimKey(k => k + 1)
   }, [stop])
 
   const start = useCallback(() => {
@@ -67,23 +111,22 @@ export default function App() {
   const reset = useCallback(() => {
     stop()
     setDone(false)
-    const t = setMin * 60 + setSec
-    setTotalSecs(t)
-    setAnimKey(k => k + 1)
+    setTotalSecs(setMin * 60 + setSec)
   }, [stop, setMin, setSec])
+
+  const handleSetMin = useCallback((v: number) => {
+    setSetMin(v)
+    if (!running) setTotalSecs(v * 60 + setSec)
+  }, [running, setSec])
+
+  const handleSetSec = useCallback((v: number) => {
+    setSetSec(v)
+    if (!running) setTotalSecs(setMin * 60 + v)
+  }, [running, setMin])
 
   useEffect(() => {
     return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
   }, [])
-
-  useEffect(() => {
-    if (!running) {
-      const t = setMin * 60 + setSec
-      setTotalSecs(t)
-      setAnimKey(k => k + 1)
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [setMin, setSec])
 
   const m = Math.floor(totalSecs / 60)
   const s = totalSecs % 60
@@ -92,41 +135,39 @@ export default function App() {
 
   return (
     <div className="app">
-      <div className="label">{done ? 'Done!' : running ? 'Countdown' : 'Exercise Timer'}</div>
+      <button className="corner top-left" title="Exercise Timer">
+        <Dumbbell size={24} />
+      </button>
+      <button className="corner top-right" title="Settings"
+        onClick={() => { if (!running) setShowSettings(v => !v) }}>
+        <SlidersHorizontal size={24} />
+      </button>
+      <button className="corner bottom-left" title="Reset" onClick={reset}>
+        <RotateCcw size={24} />
+      </button>
+      <button className="corner bottom-right" title={running ? 'Pause' : 'Start'}
+        onClick={running ? pause : start}>
+        {running ? <Pause size={24} fill="currentColor" /> : <Play size={24} fill="currentColor" />}
+      </button>
 
       <div className="clock">
-        <FlipPair twoDigit={minStr} animKey={animKey} />
-        <div className="separator">
+        <DigitPair val={minStr} />
+        <div className="sep">
           <span className="dot" />
           <span className="dot" />
         </div>
-        <FlipPair twoDigit={secStr} animKey={animKey} />
+        <DigitPair val={secStr} />
       </div>
 
-      <div className="set-time">
-        <label>Min
-          <input
-            type="number" min={0} max={99} value={setMin}
-            onChange={e => setSetMin(Math.max(0, Math.min(99, +e.target.value)))}
-            disabled={running}
-          />
-        </label>
-        <label>Sec
-          <input
-            type="number" min={0} max={59} value={setSec}
-            onChange={e => setSetSec(Math.max(0, Math.min(59, +e.target.value)))}
-            disabled={running}
-          />
-        </label>
-      </div>
+      {done && <div className="done-badge">Done!</div>}
 
-      <div className="controls">
-        <button onClick={reset}>Reset</button>
-        {running
-          ? <button className="primary" onClick={pause}>Pause</button>
-          : <button className="primary" onClick={start}>Start</button>
-        }
-      </div>
+      {showSettings && (
+        <SettingsOverlay
+          setMin={setMin} setSec={setSec}
+          onSetMin={handleSetMin} onSetSec={handleSetSec}
+          onClose={() => setShowSettings(false)}
+        />
+      )}
     </div>
   )
 }
