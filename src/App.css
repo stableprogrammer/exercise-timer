@@ -1,0 +1,196 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: #000;
+  min-height: 100svh;
+}
+
+#root {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100svh;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 40px;
+  font-family: 'Arial Black', Arial, sans-serif;
+  user-select: none;
+}
+
+.label {
+  color: #444;
+  font-size: 12px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  font-family: Arial, sans-serif;
+}
+
+/* ── clock ── */
+.clock {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.segment-group {
+  display: flex;
+  gap: 8px;
+}
+
+/* ── each digit card ── */
+.digit {
+  position: relative;
+  width: 110px;
+  height: 160px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #111;
+}
+
+.digit-divider {
+  position: absolute;
+  inset: 0;
+  top: 50%;
+  height: 2px;
+  background: #000;
+  z-index: 3;
+}
+
+.digit-top,
+.digit-bottom {
+  position: absolute;
+  left: 0; right: 0;
+  width: 100%;
+  height: 50%;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+}
+
+.digit-top {
+  top: 0;
+  align-items: flex-end;
+  background: #1e1e1e;
+  border-radius: 12px 12px 0 0;
+}
+
+.digit-bottom {
+  bottom: 0;
+  align-items: flex-start;
+  background: #181818;
+  border-radius: 0 0 12px 12px;
+}
+
+.digit-top span,
+.digit-bottom span {
+  font-size: 120px;
+  font-weight: 900;
+  color: #888;
+  line-height: 1;
+  display: block;
+}
+
+.digit-top span    { transform: translateY(50%); }
+.digit-bottom span { transform: translateY(-50%); }
+
+/* flip animation */
+@keyframes flipTop {
+  from { transform: translateY(50%) rotateX(0deg); }
+  to   { transform: translateY(50%) rotateX(-90deg); }
+}
+@keyframes flipBot {
+  from { transform: translateY(-50%) rotateX(90deg); }
+  to   { transform: translateY(-50%) rotateX(0deg); }
+}
+
+.digit-top {
+  perspective: 500px;
+  transform-style: preserve-3d;
+  animation: flipTop 0.25s ease-in;
+}
+.digit-bottom {
+  perspective: 500px;
+  transform-style: preserve-3d;
+  animation: flipBot 0.25s ease-out 0.25s both;
+}
+
+/* ── separator dots ── */
+.separator {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-bottom: 4px;
+}
+.dot {
+  width: 10px;
+  height: 10px;
+  background: #333;
+  border-radius: 50%;
+}
+
+/* ── set-time inputs ── */
+.set-time {
+  display: flex;
+  gap: 20px;
+}
+
+.set-time label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  color: #444;
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-family: Arial, sans-serif;
+}
+
+.set-time input {
+  width: 64px;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 6px;
+  color: #888;
+  font-size: 18px;
+  text-align: center;
+  padding: 7px;
+  outline: none;
+  -moz-appearance: textfield;
+}
+.set-time input::-webkit-outer-spin-button,
+.set-time input::-webkit-inner-spin-button { -webkit-appearance: none; }
+.set-time input:focus { border-color: #555; color: #bbb; }
+.set-time input:disabled { opacity: 0.35; cursor: not-allowed; }
+
+/* ── controls ── */
+.controls {
+  display: flex;
+  gap: 14px;
+}
+
+button {
+  background: #1e1e1e;
+  color: #666;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 30px;
+  font-size: 12px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: pointer;
+  font-family: Arial, sans-serif;
+  transition: background 0.2s, color 0.2s;
+}
+button:hover { background: #2a2a2a; color: #aaa; }
+
+button.primary {
+  background: #2d2d2d;
+  color: #ccc;
+  font-weight: bold;
+}
+button.primary:hover { background: #3a3a3a; color: #fff; }
